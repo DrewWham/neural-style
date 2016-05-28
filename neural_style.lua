@@ -15,6 +15,8 @@ cmd:option('-style_image', 'examples/inputs/seated-nude.jpg',
 cmd:option('-style_blend_weights', 'nil')
 cmd:option('-content_image', 'examples/inputs/tubingen.jpg',
            'Content target image')
+cmd:option('-new_image', 'examples/inputs/tubingen.jpg',
+           'New Init target image')
 cmd:option('-image_size', 512, 'Maximum height / width of generated image')
 cmd:option('-gpu', 0, 'Zero-indexed ID of the GPU to use; for CPU mode set -gpu = -1')
 
@@ -83,6 +85,10 @@ local function main(params)
   content_image = image.scale(content_image, params.image_size, 'bilinear')
   local content_image_caffe = preprocess(content_image):float()
   
+  local new_image = image.load(params.new_image, 3)
+  new_image = image.scale(new_image, params.image_size, 'bilinear')
+  local new_image_caffe = preprocess(new_image):float()
+  
   local style_size = math.ceil(params.style_scale * params.image_size)
   local style_image_list = params.style_image:split(',')
   local style_images_caffe = {}
@@ -120,11 +126,13 @@ local function main(params)
   if params.gpu >= 0 then
     if params.backend ~= 'clnn' then
       content_image_caffe = content_image_caffe:cuda()
+      new_image_caffe = new_image_caffe:cuda()
       for i = 1, #style_images_caffe do
         style_images_caffe[i] = style_images_caffe[i]:cuda()
       end
     else
       content_image_caffe = content_image_caffe:cl()
+      new_image_caffe = new_image_caffe:cl()
       for i = 1, #style_images_caffe do
         style_images_caffe[i] = style_images_caffe[i]:cl()
       end
@@ -248,6 +256,8 @@ local function main(params)
     img = torch.randn(content_image:size()):float():mul(0.001)
   elseif params.init == 'image' then
     img = content_image_caffe:clone():float()
+  elseif params.init == 'new' then
+    img = new_image_caffe:clone():float()
   else
     error('Invalid init type')
   end
