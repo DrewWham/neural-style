@@ -256,8 +256,8 @@ local function main(params)
     img = torch.randn(content_image:size()):float():mul(0.001)
   elseif params.init == 'image' then
     img = content_image_caffe:clone():float()
-  elseif params.init == 'new' then
-    img = new_image_caffe:clone():float()
+  elseif params.init == 'style' then
+    img = style_image_caffe:clone():float()
   else
     error('Invalid init type')
   end
